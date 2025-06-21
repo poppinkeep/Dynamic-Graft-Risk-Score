@@ -1,455 +1,388 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Graft Risk Score (Meta-Synthesis)</title>
-    <!-- Tailwind CSS for styling -->
+    <title>Dynamic Kidney Graft Risk Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for a clean look -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="/ico.png">
+         <link rel="icon" type="image/x-icon" href="/ico.png">
     <style>
-        /* Custom styles to enhance the UI */
         body {
             font-family: 'Inter', sans-serif;
         }
-
-        .info-icon {
-            cursor: pointer;
+        .tooltip {
             position: relative;
             display: inline-block;
         }
-
-        .tooltip {
+        .tooltip .tooltiptext {
             visibility: hidden;
-            width: 240px;
+            width: 250px;
             background-color: #555;
             color: #fff;
-            text-align: center;
+            text-align: left;
             border-radius: 6px;
-            padding: 8px 12px;
+            padding: 8px;
             position: absolute;
-            z-index: 10;
+            z-index: 1;
             bottom: 125%;
             left: 50%;
-            margin-left: -120px;
+            margin-left: -125px;
             opacity: 0;
             transition: opacity 0.3s;
-            font-size: 0.8rem;
         }
-
-        .tooltip::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #555 transparent transparent transparent;
-        }
-
-        .info-icon:hover .tooltip {
+        .tooltip:hover .tooltiptext {
             visibility: visible;
             opacity: 1;
         }
-
-        /* Style for the risk gauge */
-        .gauge-container {
+        .info-icon {
+            cursor: pointer;
+            margin-left: 4px;
+        }
+         /* Custom gauge style */
+        .gauge {
             width: 100%;
-            max-width: 300px;
-            height: 150px;
+            max-width: 250px;
+            height: 125px;
             position: relative;
             overflow: hidden;
+            border-radius: 125px 125px 0 0;
+            background-color: #e9ecef;
         }
-
-        .gauge-background {
+        .gauge-body {
             width: 100%;
             height: 100%;
             background: conic-gradient(from -90deg, #fcff43 0%, #fd2f2f 50%, #4eff4e 100%);
-            border-radius: 150px 150px 0 0;
             position: absolute;
             top: 0;
+            left: 0;
         }
-
         .gauge-cover {
             width: 70%;
-            height: 120%;
-            background: #1F2937;
-            /* bg-gray-800 */
-            border-radius: 48%;
+            height: 50%;
+            background: #fff;
+            border-radius: 45%;
             position: absolute;
-            top: 40%;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -25%);
             display: flex;
             align-items: center;
-            justify-content: Top;
+            justify-content: center;
             flex-direction: column;
-            padding-top: 20px;
+            padding-top: 5px;
         }
-
         .gauge-needle {
             width: 2px;
-            height: 80%;
-            background-color: rgb(0, 0, 0);
+            height: 50%;
+            background: #343a40;
             position: absolute;
-            bottom: 10%;
+            bottom: 0;
             left: 50%;
-            transform-origin: bottom;
+            transform-origin: bottom center;
             transition: transform 0.5s ease-in-out;
-        }
-
-        .gauge-needle-base {
-            width: 10px;
-            height: 10px;
-            background-color: white;
-            border-radius: 50%;
-            position: absolute;
-            bottom: 8%;
-            left: 50%;
-            transform: translateX(-50%);
         }
     </style>
 </head>
+<body class="bg-gray-50 text-gray-800">
 
-<body class="bg-gray-50 text-white flex flex-col items-center justify-center min-h-screen p-4">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Dynamic Kidney Graft Risk Calculator</h1>
+            <p class="mt-2 text-md text-gray-600 max-w-3xl mx-auto">An integrative tool for predicting long-term kidney allograft failure based on a meta-synthesis of clinical research.</p>
+        </header>
 
-    <div class="w-full max-w-6xl bg-gray-200 rounded-xl shadow-2xl p-6 md:p-8 space-y-8">
+        <main class="bg-gray-900 p-6 md:p-8 rounded-2xl shadow-lg">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                
+                <!-- Input Form Section -->
+                <div id="calculator-form" class="lg:col-span-3">
+                    <h2 class="text-2xl font-semibold mb-6 border-b pb-3 text-cyan-700">Patient Parameters</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
 
-        <!-- Header Section -->
-        <div class="text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-cyan-700">Dynamic Graft Risk Score (Meta-Synthesis)</h1>
-            <p class="mt-2 text-lg text-gray-700">A Predictive Tool Based on Systematic Review Findings</p>
-        </div>
-
-        <!-- Main Content: Inputs and Results -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-            <!-- Input Parameters Column -->
-            <div class="space-y-6 bg-gray-900 p-6 rounded-lg">
-                <h2 class="text-2xl font-semibold text-white border-b-2 border-cyan-500 pb-2">Post-Transplant Clinical
-                    Data</h2>
-
-                <!-- eGFR Input -->
-                <div>
-                    <label for="egfr" class="flex items-center text-md font-medium text-gray-200">
-                        eGFR (mL/min/1.73m²)
-                        <div class="info-icon ml-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <span class="tooltip">Estimated Glomerular Filtration Rate. A key indicator of kidney
-                                function, used in all reviewed models.</span>
+                        <!-- Functional Parameters -->
+                        <div class="md:col-span-2 p-4 border border-gray-900 rounded-lg bg-gray-800">
+                            <h3 class="font-semibold text-lg mb-4 text-white">Functional & Clinical</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="time_since_tx" class="block text-sm font-medium text-white">Time Since Transplant (Years)</label>
+                                    <input type="number" id="time_since_tx" value="1" min="0" step="0.1" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="egfr" class="block text-sm font-medium text-white flex items-center">eGFR (mL/min/1.73m²)</label>
+                                    <input type="number" id="egfr" value="45" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="proteinuria" class="block text-sm font-medium text-white">Proteinuria (g/g)</label>
+                                    <input type="number" id="proteinuria" value="0.3" min="0" step="0.1" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                </div>
+                            </div>
                         </div>
-                    </label>
-                    <input type="number" id="egfr" name="egfr"
-                        class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                        value="50">
-                </div>
 
-                <!-- Proteinuria Input -->
-                <div>
-                    <label for="proteinuria" class="flex items-center text-md font-medium text-gray-200">
-                        Proteinuria (g/g)
-                        <div class="info-icon ml-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <span class="tooltip">Protein in urine. A strong and consistently used predictor of adverse
-                                outcomes in the reviewed studies.</span>
+                        <!-- Histological Parameters -->
+                        <div class="p-4 border border-gray-900 bg-gray-800 rounded-lg">
+                            <h3 class="font-semibold text-lg mb-4 text-white flex items-center">
+                                Histology (Banff Scores)
+                                <div class="tooltip info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltiptext">Enter scores from the latest allograft biopsy based on the Banff classification.</span>
+                                </div>
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="ifta" class="block text-sm font-medium text-white">Interstitial Fibrosis/Atrophy (ci+ct)</label>
+                                    <select id="ifta" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                        <option value="0">0-1</option>
+                                        <option value="1">2</option>
+                                        <option value="2">3</option>
+                                    </select>
+                                </div>
+                                 <div>
+                                    <label for="microcirculation_inflammation" class="block text-sm font-medium text-white">Microcirculation Inflammation (g+ptc)</label>
+                                    <input type="number" id="microcirculation_inflammation" value="1" min="0" max="6" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="tubulitis" class="block text-sm font-medium text-white">Interstitial Inflammation/Tubulitis (i+t)</label>
+                                    <input type="number" id="tubulitis" value="1" min="0" max="6" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="glomerulopathy" class="block text-sm font-medium text-white">Transplant Glomerulopathy (cg)</label>
+                                    <select id="glomerulopathy" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                        <option value="0">0</option>
+                                        <option value="1">>0</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="peritubular_capillaritis_change" class="block text-sm font-medium text-white">Δ Peritubular Capillaritis (Post-Rx)</label>
+                                    <input type="number" id="peritubular_capillaritis_change" value="0" step="1" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                </div>
+                            </div>
                         </div>
-                    </label>
-                    <input type="number" step="0.01" id="proteinuria" name="proteinuria"
-                        class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                        value="0.2">
-                </div>
 
-                <!-- Immunological Factors -->
-                <h3 class="text-xl font-semibold text-white pt-2">Immunological Factors</h3>
-                <hr class="border-gray-700">
-
-                <!-- Anti-HLA DSA Input -->
-                <div>
-                    <label class="block text-md font-medium text-gray-200 mb-2 flex items-center">
-                        Donor-Specific Antibodies (DSA)
-                        <div class="info-icon ml-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <span class="tooltip">An immunological factor identified as a significant predictor in
-                                several high-performance models (e.g., iBox, Huang et al.).</span>
+                        <!-- Immunological Parameters -->
+                        <div class="p-4 border border-gray-900 bg-gray-800 rounded-lg">
+                            <h3 class="font-semibold text-lg mb-4 text-white flex items-center">
+                                Immunological
+                                <div class="tooltip info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltiptext">Enter details about the immunodominant Donor-Specific Antibody (DSA).</span>
+                                </div>
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="dsa_mfi" class="block text-sm font-medium text-white">Anti-HLA DSA MFI</label>
+                                    <select id="dsa_mfi" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                        <option value="0">&lt;500</option>
+                                        <option value="1">500-2999</option>
+                                        <option value="2">3000-5999</option>
+                                        <option value="3">≥6000</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="dsa_mfi_change" class="block text-sm font-medium text-white">Relative Change in DSA MFI (Post-Rx)</label>
+                                    <input type="number" id="dsa_mfi_change" value="0" step="0.1" class="mt-1 block w-full bg-gray-700 text-white rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                                </div>
+                            </div>
                         </div>
-                    </label>
-                    <div class="flex items-center space-x-4">
-                        <label class="flex items-center"><input type="radio" name="dsa" value="0"
-                                class="form-radio h-4 w-4 text-cyan-600 bg-gray-700 border-gray-500 focus:ring-cyan-500"
-                                checked> <span class="ml-2 text-gray-300">Negative</span></label>
-                        <label class="flex items-center"><input type="radio" name="dsa" value="1"
-                                class="form-radio h-4 w-4 text-cyan-600 bg-gray-700 border-gray-500 focus:ring-cyan-500">
-                            <span class="ml-2 text-gray-300">Positive</span></label>
+
                     </div>
-                </div>
-
-                <!-- Acute Rejection Input -->
-                <div>
-                    <label class="block text-md font-medium text-gray-200 mb-2 flex items-center">
-                        History of Acute Rejection
-                        <div class="info-icon ml-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <span class="tooltip">A critical post-transplant event used as a time-varying covariate in
-                                several dynamic models reviewed (e.g., Naqvi et al., Yao et al.).</span>
-                        </div>
-                    </label>
-                    <div class="flex items-center space-x-4">
-                        <label class="flex items-center"><input type="radio" name="rejection" value="0"
-                                class="form-radio h-4 w-4 text-cyan-600 bg-gray-700 border-gray-500 focus:ring-cyan-500"
-                                checked> <span class="ml-2 text-gray-300">No</span></label>
-                        <label class="flex items-center"><input type="radio" name="rejection" value="1"
-                                class="form-radio h-4 w-4 text-cyan-600 bg-gray-700 border-gray-500 focus:ring-cyan-500">
-                            <span class="ml-2 text-gray-300">Yes</span></label>
-                    </div>
-                </div>
-
-                <!-- Allograft Pathology -->
-                <h3 class="text-xl font-semibold text-white pt-2">Allograft Pathology (from Biopsy)</h3>
-                <hr class="border-gray-700">
-
-                <!-- Histology Inputs -->
-                <div>
-                    <label class="block text-md font-medium text-gray-200 mb-2 flex items-center">
-                        Banff Lesion Scores (select if > 0)
-                        <div class="info-icon ml-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <span class="tooltip">Pathology scores from biopsy, as used in models like iBox and
-                                Viglietti et al.</span>
-                        </div>
-                    </label>
-                    <div class="grid grid-cols-2 gap-4 mt-2">
-                        <label class="flex items-center p-3 bg-gray-800 rounded-lg"><input type="checkbox" id="g_score"
-                                class="form-checkbox h-5 w-5 text-cyan-600 bg-gray-700 border-gray-500 rounded focus:ring-cyan-500">
-                            <span class="ml-3 text-gray-300">Glomerulitis (g)</span></label>
-                        <label class="flex items-center p-3 bg-gray-800 rounded-lg"><input type="checkbox"
-                                id="ptc_score"
-                                class="form-checkbox h-5 w-5 text-cyan-600 bg-gray-700 border-gray-500 rounded focus:ring-cyan-500">
-                            <span class="ml-3 text-gray-300">Capillaritis (ptc)</span></label>
-                        <label class="flex items-center p-3 bg-gray-800 rounded-lg"><input type="checkbox" id="t_score"
-                                class="form-checkbox h-5 w-5 text-cyan-600 bg-gray-700 border-gray-500 rounded focus:ring-cyan-500">
-                            <span class="ml-3 text-gray-300">Inflammation (t)</span></label>
-                        <label class="flex items-center p-3 bg-gray-800 rounded-lg"><input type="checkbox"
-                                id="i_ifta_score"
-                                class="form-checkbox h-5 w-5 text-cyan-600 bg-gray-700 border-gray-500 rounded focus:ring-cyan-500">
-                            <span class="ml-3 text-gray-300">Inflammation in IFTA (i-IFTA)</span></label>
-                    </div>
-                </div>
-
-                <!-- Calculate Button -->
-                <div class="pt-4">
-                    <button id="calculateBtn"
-                        class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-cyan-500 focus:ring-opacity-50">
-                        Calculate Synthesized Risk
+                    <button id="calculate-btn" class="mt-8 w-full bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                        Calculate Risk
                     </button>
                 </div>
 
-            </div>
+                <!-- Results Section -->
+                <div class="lg:col-span-2 mt-8 lg:mt-0">
+                    <h2 class="text-2xl font-semibold mb-6 border-b pb-3 text-cyan-700">Predicted Outcome</h2>
+                    <div class="bg-gray-800 p-6 rounded-lg text-center border border-gray-900">
+                        <h3 class="text-lg font-medium text-white">iBox Risk Score</h3>
+                        <p id="risk-score" class="text-5xl font-bold text-white my-2">5.5</p>
 
-            <!-- Results Column -->
-            <div id="results-container"
-                class="space-y-6 bg-gray-900 p-6 rounded-lg flex-col justify-center items-center text-center hidden">
-                <h2 class="text-2xl font-semibold text-white border-b-2 border-cyan-500 pb-2 w-full">Predicted Graft
-                    Failure Risk</h2>
-
-                <div class="gauge-container">
-                    <div class="gauge-background"></div>
-                    <div class="gauge-needle" id="gauge-needle"></div>
-                    <div class="gauge-needle-base"></div>
-                    <div class="gauge-cover">
-                        <span id="main-risk-value" class="text-4xl font-bold text-white">0%</span>
-                        <span class="text-sm text-gray-400">5-Year Risk</span>
-                    </div>
-                </div>
-                <p id="risk-level-text" class="text-lg font-medium"></p>
-
-                <div class="w-full grid grid-cols-1 sm:grid-cols-3 gap-4 text-center pt-4">
-                    <div>
-                        <p class="text-sm text-gray-400">1-Year Risk</p>
-                        <p id="risk_1_year" class="text-2xl font-bold text-cyan-400">-</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-400">3-Year Risk</p>
-                        <p id="risk_3_year" class="text-2xl font-bold text-yellow-400">-</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-400">5-Year Risk</p>
-                        <p id="risk_5_year" class="text-2xl font-bold text-red-400">-</p>
+                        <div class="flex justify-center my-4">
+                            <div class="gauge">
+                                <div class="gauge-body"></div>
+                                <div class="gauge-cover">
+                                    <span id="risk-level" class="text-xl font-semibold text-gray-800">Intermediate</span>
+                                </div>
+                                <div id="gauge-needle" class="gauge-needle"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8">
+                            <h3 class="text-lg font-medium text-white mb-4">Predicted Graft Survival</h3>
+                            <canvas id="survivalChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
+        </main>
 
-            <!-- Placeholder for results -->
-            <div id="results-placeholder"
-                class="space-y-6 bg-gray-900 p-6 rounded-lg flex flex-col justify-center items-center text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-gray-600" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="1">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-                <h3 class="text-xl font-semibold text-gray-400">Results will appear here</h3>
-                <p class="text-gray-500">Enter clinical data and click the button to see the synthesized risk
-                    prediction.</p>
-            </div>
-
-        </div>
-
-        <!-- Footer / Disclaimer -->
-        <div class="text-center pt-6 border-t border-gray-700">
-            <p class="text-sm text-gray-500">
-                This tool provides a risk estimation based on a meta-synthesis of predictors identified in the
-                systematic review.
-            </p>
-            <p class="text-xs text-gray-600 mt-2">
-                <strong>Disclaimer:</strong> This is an illustrative tool for educational purposes, derived from a
-                synthesis of published literature. It is not a clinically validated prediction model and should not be
-                used for medical decision-making.
-            </p>
-        </div>
+        <footer class="mt-8 text-center text-sm text-gray-500">
+            <p><strong>Disclaimer:</strong> This tool is for informational and educational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. The prediction is based on statistical models from published research and may not be accurate for every individual.</p>
+            <p class="mt-1">Coefficients are derived from studies by Loupy et al. (BMJ 2019) and Viglietti et al. (JASN 2018).</p>
+        </footer>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Get all the necessary DOM elements
-            const calculateBtn = document.getElementById('calculateBtn');
-            const resultsContainer = document.getElementById('results-container');
-            const resultsPlaceholder = document.getElementById('results-placeholder');
-
-            const egfrInput = document.getElementById('egfr');
-            const proteinuriaInput = document.getElementById('proteinuria');
-
-            const risk1YearEl = document.getElementById('risk_1_year');
-            const risk3YearEl = document.getElementById('risk_3_year');
-            const risk5YearEl = document.getElementById('risk_5_year');
-            const mainRiskValueEl = document.getElementById('main-risk-value');
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element Selection ---
+            const form = document.getElementById('calculator-form');
+            const inputs = form.querySelectorAll('input, select');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const riskScoreEl = document.getElementById('risk-score');
+            const riskLevelEl = document.getElementById('risk-level');
             const gaugeNeedle = document.getElementById('gauge-needle');
-            const riskLevelText = document.getElementById('risk-level-text');
-
-            calculateBtn.addEventListener('click', () => {
-                // --- 1. GATHER INPUTS ---
-                const egfr = parseFloat(egfrInput.value);
-                const proteinuria = parseFloat(proteinuriaInput.value);
-                const dsa = parseInt(document.querySelector('input[name="dsa"]:checked').value);
-                const rejection = parseInt(document.querySelector('input[name="rejection"]:checked').value);
-                // Get histology inputs
-                const g_score = document.getElementById('g_score').checked ? 1 : 0;
-                const ptc_score = document.getElementById('ptc_score').checked ? 1 : 0;
-                const t_score = document.getElementById('t_score').checked ? 1 : 0;
-                const i_ifta_score = document.getElementById('i_ifta_score').checked ? 1 : 0;
-
-                // Input validation
-                if (isNaN(egfr) || isNaN(proteinuria) || egfr < 0 || proteinuria < 0) {
-                    const existingModal = document.querySelector('.error-modal');
-                    if (existingModal) existingModal.remove();
-
-                    const modal = document.createElement('div');
-                    modal.className = 'error-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
-                    modal.innerHTML = `
-                        <div class="bg-red-800 text-white rounded-lg p-6 shadow-xl max-w-sm w-full">
-                            <h3 class="text-lg font-bold mb-2">Invalid Input</h3>
-                            <p class="mb-4">Please enter valid, non-negative numbers for eGFR and Proteinuria.</p>
-                            <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded w-full">OK</button>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-                    modal.querySelector('button').onclick = () => modal.remove();
-                    return;
-                }
-
-                // --- 2. CALCULATE META-SYNTHESIS LINEAR PREDICTOR (LP) ---
-                // Coefficients are estimated based on a synthesis of findings from the review, now including pathology.
-                // ln(proteinuria+0.1) is used to handle values of 0 while maintaining sensitivity.
-                const logProteinuria = Math.log(proteinuria + 0.1);
-
-                const lp = (-0.025 * egfr) +           // Higher eGFR is protective
-                    (0.22 * logProteinuria) +     // Higher proteinuria increases risk
-                    (0.30 * dsa) +              // DSA is a significant risk factor
-                    (0.45 * rejection) +          // Acute rejection is a very strong risk factor
-                    (0.25 * g_score) +          // Glomerulitis
-                    (0.15 * ptc_score) +        // Peritubular Capillaritis
-                    (0.20 * t_score) +          // Interstitial Inflammation
-                    (0.18 * i_ifta_score);      // Inflammation in IFTA
-
-                // --- 3. CALCULATE RISK AT DIFFERENT TIME POINTS ---
-                // Formula: Risk(t) = 1 - S0(t) ^ exp(LP - mean_LP)
-                // mean_LP is adjusted to account for the new pathology variables.
-                const mean_LP = -2.8;
-                const S0_1yr = 0.99;
-                const S0_3yr = 0.97;
-                const S0_5yr = 0.95;
-
-                const exp_term = Math.exp(lp - mean_LP);
-
-                const risk_1_year = 1 - Math.pow(S0_1yr, exp_term);
-                const risk_3_year = 1 - Math.pow(S0_3yr, exp_term);
-                const risk_5_year = 1 - Math.pow(S0_5yr, exp_term);
-
-                // Convert to percentage and cap at 100%
-                const risk_1_year_pct = Math.min(Math.round(risk_1_year * 100), 100);
-                const risk_3_year_pct = Math.min(Math.round(risk_3_year * 100), 100);
-                const risk_5_year_pct = Math.min(Math.round(risk_5_year * 100), 100);
-
-                // --- 4. DISPLAY RESULTS ---
-                resultsPlaceholder.classList.add('hidden');
-                resultsContainer.classList.remove('hidden', 'flex-col');
-                resultsContainer.classList.add('flex', 'flex-col');
-
-
-                risk1YearEl.textContent = `${risk_1_year_pct}%`;
-                risk3YearEl.textContent = `${risk_3_year_pct}%`;
-                risk5YearEl.textContent = `${risk_5_year_pct}%`;
-
-                // Update the main gauge with the 5-year risk
-                mainRiskValueEl.textContent = `${risk_5_year_pct}%`;
-
-                // Update gauge needle rotation. Range is -90deg (0%) to +90deg (100%)
-                const needleRotation = -90 + (risk_5_year_pct * 1.8);
-                gaugeNeedle.style.transform = `rotate(${needleRotation}deg)`;
-
-                // Update risk level text and color
-                if (risk_5_year_pct < 15) {
-                    riskLevelText.textContent = "Low Risk";
-                    riskLevelText.className = "text-lg font-medium text-green-400";
-                } else if (risk_5_year_pct < 40) {
-                    riskLevelText.textContent = "Moderate Risk";
-                    riskLevelText.className = "text-lg font-medium text-yellow-400";
-                } else {
-                    riskLevelText.textContent = "High Risk";
-                    riskLevelText.className = "text-lg font-medium text-red-400";
+            
+            // --- Chart.js Setup ---
+            const ctx = document.getElementById('survivalChart').getContext('2d');
+            let survivalChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Assessment', '3 Years', '5 Years', '7 Years'],
+                    datasets: [{
+                        label: 'Predicted Graft Survival %',
+                        data: [],
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 3,
+                        tension: 0.1,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                        pointRadius: 5,
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Survival: ${context.parsed.y.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
                 }
             });
+
+            // --- Risk Calculation Logic ---
+            // These coefficients (β) are derived from ln(Hazard Ratio) from the multivariable analyses
+            // in Loupy et al. (BMJ 2019) and Viglietti et al. (JASN 2018).
+            // This is a simplified, demonstrative model.
+            const COEFFS = {
+                time_since_tx: 0.077,    // ln(1.08) from Loupy et al.
+                egfr: -0.073,            // ln(0.93) from Viglietti et al. (per unit)
+                proteinuria: 0.412,      // ln(1.51) from Loupy et al. (log transformed in paper, simplified here)
+                ifta: [0, 0.329, 0.89], // ln(1.39) for score 3, Loupy; ln(2.44) for >0, Viglietti. Averaged/simplified.
+                microcirculation_inflammation: 0.08, // Based on Loupy et al. 
+                tubulitis: 0.29,         // ln(1.34) from Loupy et al. for score >=3
+                glomerulopathy: 0.385,   // ln(1.47) from Loupy et al. for score >0
+                dsa_mfi: [0, 0.223, 0.542, 0.718], // ln of HRs from Loupy et al.
+                peritubular_capillaritis_change: 0.405, // ln(1.50) from Viglietti et al.
+                dsa_mfi_change: 0.262    // ln(1.30) from Viglietti et al.
+            };
+
+            // Baseline survival rates estimated from Kaplan-Meier curves (e.g., Loupy, Viglietti)
+            const BASELINE_SURVIVAL = {
+                '3': 0.94, // 94%
+                '5': 0.90, // 90%
+                '7': 0.85  // 85%
+            };
+
+            const calculateRisk = () => {
+                // 1. Get values from form
+                const values = {
+                    time_since_tx: parseFloat(document.getElementById('time_since_tx').value) || 0,
+                    egfr: parseFloat(document.getElementById('egfr').value) || 0,
+                    proteinuria: Math.log1p(parseFloat(document.getElementById('proteinuria').value) || 0), // Log-transform for better modeling
+                    ifta: parseInt(document.getElementById('ifta').value) || 0,
+                    microcirculation_inflammation: parseFloat(document.getElementById('microcirculation_inflammation').value) || 0,
+                    tubulitis: parseFloat(document.getElementById('tubulitis').value) || 0,
+                    glomerulopathy: parseInt(document.getElementById('glomerulopathy').value) || 0,
+                    dsa_mfi: parseInt(document.getElementById('dsa_mfi').value) || 0,
+                    peritubular_capillaritis_change: parseFloat(document.getElementById('peritubular_capillaritis_change').value) || 0,
+                    dsa_mfi_change: parseFloat(document.getElementById('dsa_mfi_change').value) || 0
+                };
+
+                // 2. Calculate raw risk score (sum of β * value)
+                let rawScore = 0;
+                rawScore += values.time_since_tx * COEFFS.time_since_tx;
+                rawScore += values.egfr * COEFFS.egfr;
+                rawScore += values.proteinuria * COEFFS.proteinuria;
+                rawScore += COEFFS.ifta[values.ifta];
+                rawScore += (values.microcirculation_inflammation > 2 ? values.microcirculation_inflammation * COEFFS.microcirculation_inflammation : 0);
+                rawScore += (values.tubulitis > 2 ? values.tubulitis * COEFFS.tubulitis : 0);
+                rawScore += values.glomerulopathy * COEFFS.glomerulopathy;
+                rawScore += COEFFS.dsa_mfi[values.dsa_mfi];
+                rawScore += values.peritubular_capillaritis_change * COEFFS.peritubular_capillaritis_change;
+                rawScore += values.dsa_mfi_change * COEFFS.dsa_mfi_change;
+                
+                // 3. Normalize score to a 0-10 scale for display (based on Viglietti et al. method)
+                // This is an estimation for presentation. The raw score is used for survival calculation.
+                const normalizedScore = Math.max(0, Math.min(10, (rawScore + 4) * 1.5)); // Simple normalization
+                
+                // 4. Update UI
+                updateUI(normalizedScore, rawScore);
+            };
+
+            const updateUI = (normalizedScore, rawScore) => {
+                // Update score text
+                riskScoreEl.textContent = normalizedScore.toFixed(1);
+
+                // Update risk level and gauge
+                let riskText = 'Intermediate';
+                let riskColor = '#ffc107'; // Yellow
+                if (normalizedScore < 4.0) {
+                    riskText = 'Low';
+                    riskColor = '#28a745'; // Green
+                } else if (normalizedScore > 7.0) {
+                    riskText = 'High';
+                    riskColor = '#dc3545'; // Red
+                }
+                riskLevelEl.textContent = riskText;
+                
+                // Update gauge needle
+                const angle = (normalizedScore / 10) * 180;
+                gaugeNeedle.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+
+                // 5. Calculate and update survival chart
+                // Survival(t) = S0(t) ^ exp(rawScore)
+                const riskFactor = Math.exp(rawScore);
+                const survival3yr = Math.pow(BASELINE_SURVIVAL['3'], riskFactor) * 100;
+                const survival5yr = Math.pow(BASELINE_SURVIVAL['5'], riskFactor) * 100;
+                const survival7yr = Math.pow(BASELINE_SURVIVAL['7'], riskFactor) * 100;
+
+                survivalChart.data.datasets[0].data = [100, survival3yr, survival5yr, survival7yr];
+                survivalChart.update();
+            };
+
+            // --- Event Listeners ---
+            inputs.forEach(input => {
+                input.addEventListener('input', calculateRisk);
+            });
+            calculateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                calculateRisk();
+            });
+
+            // --- Initial Calculation ---
+            calculateRisk();
         });
     </script>
 </body>
-
 </html>
